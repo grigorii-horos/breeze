@@ -10,6 +10,8 @@
 
 #include "breeze.h"
 #include "breezesettings.h"
+#include "breezetextbutton.h"
+#include "breezeappmenubuttongroup.h"
 
 #include <KDecoration2/Decoration>
 #include <KDecoration2/DecoratedClient>
@@ -62,6 +64,12 @@ namespace Breeze
         //@{
         void setOpacity( qreal );
 
+        qreal textWidth(const QString& text){
+            QFontMetrics f(settings().data()->font());
+
+            return f.boundingRect(text).width();
+        };
+
         qreal opacity() const
         { return m_opacity; }
 
@@ -88,7 +96,8 @@ namespace Breeze
         inline bool hideTitleBar() const;
         //@}
 
-        public Q_SLOTS:
+        QPoint windowPos() const;
+    public Q_SLOTS:
         void init() override;
 
         private Q_SLOTS:
@@ -104,12 +113,14 @@ namespace Breeze
 
         //* return the rect in which caption will be drawn
         QPair<QRect,Qt::Alignment> captionRect() const;
+        QRect appMenuRect() const;
 
         void createButtons();
         void paintTitleBar(QPainter *painter, const QRect &repaintRegion);
         void updateShadow();
         QSharedPointer<KDecoration2::DecorationShadow> createShadowObject( const float strengthScale );
         void setScaledCornerRadius();
+        AppMenuButtonGroup *m_menuButtons;
         
         //*@name border size
         //@{

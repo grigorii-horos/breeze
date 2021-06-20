@@ -21,6 +21,7 @@
 #include <KDecoration2/DecorationButtonGroup>
 #include <KDecoration2/DecorationShadow>
 
+
 #include <KConfigGroup>
 #include <KColorUtils>
 #include <KSharedConfig>
@@ -470,6 +471,15 @@ namespace Breeze
     {
         m_leftButtons = new KDecoration2::DecorationButtonGroup(KDecoration2::DecorationButtonGroup::Position::Left, this, &Button::create);
         m_rightButtons = new KDecoration2::DecorationButtonGroup(KDecoration2::DecorationButtonGroup::Position::Right, this, &Button::create);
+
+
+        m_menuButtons = new AppMenuButtonGroup(this);
+
+        connect(m_menuButtons, &AppMenuButtonGroup::menuUpdated,
+                this, &Decoration::updateButtonsGeometry);
+        m_menuButtons->updateAppMenuModel();
+
+
         updateButtonsGeometry();
     }
 
@@ -538,6 +548,16 @@ namespace Breeze
 
             } else m_rightButtons->setPos(QPointF(size().width() - m_rightButtons->geometry().width() - hPadding - borderRight(), vPadding));
 
+        }
+
+        // Menu
+        if (!m_menuButtons->buttons().isEmpty()) {
+//            const int captionOffset = captionMinWidth() + settings()->smallSpacing();
+            const QRect availableRect = appMenuRect();
+            m_menuButtons->setPos(availableRect.topLeft());
+
+            m_menuButtons->setSpacing(0);
+//            m_menuButtons->updateOverflow(availableRect);
         }
 
         update();
@@ -671,16 +691,50 @@ namespace Breeze
 
         painter->restore();
 
-        // draw caption
-        painter->setFont(s->font());
-        painter->setPen( fontColor() );
-        const auto cR = captionRect();
-        const QString caption = painter->fontMetrics().elidedText(c->caption(), Qt::ElideMiddle, cR.first.width());
-        painter->drawText(cR.first, cR.second | Qt::TextSingleLine, caption);
+//        // draw caption
+//        painter->setFont(s->font());
+//        painter->setPen( fontColor() );
+//        const auto cR = captionRect();
+//        const QString caption = painter->fontMetrics().elidedText(c->caption(), Qt::ElideMiddle, cR.first.width());
+//        painter->drawText(cR.first, cR.second | Qt::TextSingleLine, caption);
+
 
         // draw all buttons
         m_leftButtons->paint(painter, repaintRegion);
         m_rightButtons->paint(painter, repaintRegion);
+
+        m_menuButtons->paint(painter, repaintRegion);
+
+    }
+
+    QPoint Decoration::windowPos() const
+    {
+        const auto *decoratedClient = client().toStrongRef().data();
+        WId windowId = decoratedClient->windowId();
+
+            //--- From: BreezeSizeGrip.cpp
+            /*
+            get root position matching position
+            need to use xcb because the embedding of the widget
+            breaks QT's mapToGlobal and other methods
+            */
+            auto connection( QX11Info::connection() );
+            xcb_get_geometry_cookie_t cookie( xcb_get_geometry( connection, windowId ) );
+            QScopedPointer<xcb_get_geometry_reply_t> reply( xcb_get_geometry_reply( connection, cookie, nullptr ) );
+            if (reply) {
+                // translate coordinates
+                xcb_translate_coordinates_cookie_t coordCookie( xcb_translate_coordinates(
+                    connection, windowId, reply.data()->root,
+                    -reply.data()->border_width,
+                    -reply.data()->border_width ) );
+
+                QScopedPointer< xcb_translate_coordinates_reply_t> coordReply( xcb_translate_coordinates_reply( connection, coordCookie, nullptr ) );
+
+                if (coordReply) {
+                    return QPoint(coordReply.data()->dst_x, coordReply.data()->dst_y);
+                }
+            }
+            return QPoint(0,0);
     }
 
     //________________________________________________________________
@@ -752,6 +806,30 @@ namespace Breeze
                 }
 
             }
+
+        }
+
+    }
+
+    //________________________________________________________________
+    QRect Decoration::appMenuRect() const
+    {
+        if( hideTitleBar() ) return QRect();
+        else {
+
+            auto c = client().toStrongRef();
+            const int leftOffset = m_leftButtons->buttons().isEmpty() ?
+                Metrics::TitleBar_SideMargin*settings()->smallSpacing():
+                m_leftButtons->geometry().x() + m_leftButtons->geometry().width() + Metrics::TitleBar_SideMargin*settings()->smallSpacing();
+
+            const int rightOffset = m_rightButtons->buttons().isEmpty() ?
+                Metrics::TitleBar_SideMargin*settings()->smallSpacing() :
+                size().width() - m_rightButtons->geometry().x() + Metrics::TitleBar_SideMargin*settings()->smallSpacing();
+
+            const int yOffset = settings()->smallSpacing()*Metrics::TitleBar_TopMargin;
+            const QRect maxRect( leftOffset, yOffset, size().width() - leftOffset - rightOffset, captionHeight() );
+
+            return maxRect;
 
         }
 

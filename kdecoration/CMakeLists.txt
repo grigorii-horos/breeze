@@ -2,6 +2,12 @@ add_definitions(-DTRANSLATION_DOMAIN="breeze_kwin_deco")
 
 find_package(KF5 REQUIRED COMPONENTS CoreAddons GuiAddons ConfigWidgets WindowSystem I18n IconThemes)
 find_package(Qt5 CONFIG REQUIRED COMPONENTS DBus)
+find_package (ECM 0.0.9 REQUIRED NO_MODULE)
+
+set (CMAKE_MODULE_PATH
+    ${CMAKE_MODULE_PATH}
+    ${ECM_MODULE_PATH}
+)
 
 ### XCB
 find_package(XCB COMPONENTS XCB)
@@ -39,7 +45,12 @@ set(breezedecoration_SRCS
     breezedecoration.cpp
     breezeexceptionlist.cpp
     breezesettingsprovider.cpp
-    breezesizegrip.cpp)
+    breezesizegrip.cpp
+    breezetextbutton.cpp
+    breezeappmenubuttongroup.cpp
+    breezeappmenumodel.cpp
+    breezemenuoverflowbutton.cpp
+    )
 
 kconfig_add_kcfg_files(breezedecoration_SRCS breezesettings.kcfgc)
 
@@ -63,6 +74,9 @@ set(breezedecoration_config_PART_FORMS
 
 ki18n_wrap_ui(breezedecoration_config_PART_FORMS_HEADERS ${breezedecoration_config_PART_FORMS})
 
+include(ECMQtDeclareLoggingCategory)
+add_subdirectory(libdbusmenuqt)
+
 ### build library
 add_library(breezedecoration MODULE
     ${breezedecoration_SRCS}
@@ -75,6 +89,7 @@ target_link_libraries(breezedecoration
         Qt::Gui
         Qt::DBus
     PRIVATE
+        dbusmenuqt
         breezecommon5
         KDecoration2::KDecoration
         KF5::ConfigCore

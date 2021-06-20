@@ -182,7 +182,8 @@ namespace Breeze
         }
 
         // render mark
-        const QColor foregroundColor( this->foregroundColor() );
+        const QColor foregroundColor( this->
+                                      foregroundColor() );
         if( foregroundColor.isValid() )
         {
 
