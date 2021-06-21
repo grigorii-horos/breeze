@@ -438,7 +438,7 @@ void AppMenuModel::filterWindow(KWindowInfo &info)
 QHash<int, QByteArray> AppMenuModel::roleNames() const
 {
     QHash<int, QByteArray> roleNames;
-    roleNames[MenuRole] = QByteArrayLiteral("activeMenu");
+    roleNames[Qt::DisplayRole] = QByteArrayLiteral("activeMenu");
     roleNames[ActionRole] = QByteArrayLiteral("activeActions");
     return roleNames;
 }
@@ -457,7 +457,7 @@ QVariant AppMenuModel::data(const QModelIndex &index, int role) const
         return QVariant();
     }
 
-    if (role == MenuRole) { // TODO this should be Qt::DisplayRole
+    if (role == Qt::DisplayRole) { // TODO this should be Qt::DisplayRole
         return actions.at(row)->text();
     } else if (role == ActionRole) {
         return QVariant::fromValue((void *) actions.at(row));

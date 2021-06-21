@@ -66,8 +66,7 @@ private:
 public:
     enum AppMenuRole
     {
-        MenuRole = Qt::UserRole + 1, // TODO this should be Qt::DisplayRole
-        ActionRole
+        ActionRole =  Qt::UserRole + 1,
     };
 
     QVariant data(const QModelIndex &index, int role) const override;

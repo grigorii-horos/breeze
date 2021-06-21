@@ -266,7 +266,6 @@ void AppMenuButtonGroup::updateAppMenuModel()
     }
 
     if (!decoratedClient->hasApplicationMenu()) {
-        qDebug()<<"No appmenu";
         resetButtons();
         return;
     }
@@ -274,21 +273,19 @@ void AppMenuButtonGroup::updateAppMenuModel()
     if (m_appMenuModel) {
         // Update AppMenuModel
         // qCDebug(category) << "AppMenuModel" << m_appMenuModel;
-        qDebug()<<"Has Appmenu";
         resetButtons();
 
         // Populate
         for (int row = 0; row < m_appMenuModel->rowCount(); row++) {
 
             const QModelIndex index = m_appMenuModel->index(row, 0);
-            const QString itemLabel = m_appMenuModel->data(index, AppMenuModel::MenuRole).toString();
+            const QString itemLabel = m_appMenuModel->data(index, Qt::DisplayRole).toString();
 
             // https://github.com/psifidotos/applet-window-appmenu/blob/908e60831d7d68ee56a56f9c24017a71822fc02d/lib/appmenuapplet.cpp#L167
             const QVariant data = m_appMenuModel->data(index, AppMenuModel::ActionRole);
             QAction *itemAction = (QAction *)data.value<void *>();
 
             // qCDebug(category) << "    " << itemAction;
-
             TextButton *b = new TextButton(deco, row, this);
             b->setText(itemLabel);
             b->setAction(itemAction);
