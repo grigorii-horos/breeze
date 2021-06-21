@@ -64,7 +64,7 @@ namespace Breeze
         //@{
         void setOpacity( qreal );
 
-        qreal textWidth(const QString& text){
+        qreal textWidth(const QString& text) const {
             QFontMetrics f(settings().data()->font());
 
             return f.boundingRect(text).width();
