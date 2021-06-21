@@ -57,6 +57,10 @@ public:
     QAction *action() const;
     void setAction(QAction *newAction);
 
+private:
+    QColor foregroundColor() const;
+    QColor backgroundColor() const;
+
 signals:
     void menuChanged();
     void textChanged();

@@ -35,7 +35,7 @@ TextButton::TextButton(const QPointer<KDecoration2::Decoration> &decoration,int 
     connect( this, &KDecoration2::DecorationButton::hoveredChanged, this, &TextButton::updateAnimationState );
 
     connect(this, &TextButton::clicked, this, [this,d](){
-        if(!m_action) {
+        if(!m_action || !m_action->menu()) {
             return;
         }
 
@@ -66,6 +66,29 @@ void TextButton::setAction(QAction *newAction)
     m_action = newAction;
 }
 
+QColor TextButton::foregroundColor() const
+{
+    auto d = qobject_cast<Decoration*>( decoration() );
+
+    if(isPressed() || isHovered() || (m_action && m_action->menu() && m_action->menu()->isVisible())){
+        return d->titleBarColor();
+    }
+    return d->fontColor();
+}
+
+QColor TextButton::backgroundColor() const
+{
+    auto d = qobject_cast<Decoration*>( decoration() );
+
+    if(isPressed()){
+        return KColorUtils::mix( d->titleBarColor(), d->fontColor(), 0.3 );
+    }
+    if(isHovered()){
+        return d->fontColor();
+    }
+    return d->titleBarColor();
+}
+
 const QString &TextButton::text() const
 {
     return m_text;
@@ -73,15 +96,18 @@ const QString &TextButton::text() const
 
 void TextButton::setText(const QString &newText)
 {
-    auto deco = qobject_cast<Decoration*>(decoration());
+    auto d = qobject_cast<Decoration*>(decoration());
     if (m_text == newText)
         return;
     m_text = newText;
 
-    const QSizeF textSize = {deco->textWidth(newText), static_cast<double>(deco->captionHeight())};
+    auto noMnemonicText = newText;
+    noMnemonicText.remove('&');
+
+    const QSizeF textSize = {d->textWidth(noMnemonicText), static_cast<double>(d->captionHeight())};
 
     auto geom = geometry();
-    geom.setSize({textSize.width(), textSize.height()});
+    geom.setSize({textSize.width()+(Metrics::TitleBar_SideMargin*d->settings()->smallSpacing()*2), textSize.height()});
     setGeometry(geom);
 
 
@@ -91,42 +117,31 @@ void TextButton::setText(const QString &newText)
 
 void TextButton::paint(QPainter *painter, const QRect &repaintArea)
 {
-    auto d = qobject_cast<Decoration*>( decoration() );
 
     Q_UNUSED(repaintArea)
 
     if (!decoration()) return;
 
     painter->save();
-    painter->setPen(Qt::transparent);
 
-    auto textRect = painter->fontMetrics().boundingRect(m_text);
-    textRect.moveCenter(geometry().translated(Metrics::TitleBar_SideMargin*d->settings()->smallSpacing(),0).center().toPoint());
+    auto noMnemonicText = m_text;
+    noMnemonicText.remove('&');
 
 
-    if (isPressed()){
-           painter->setBrush(KColorUtils::mix( d->titleBarColor(), d->fontColor(), 0.3 ));
-           painter->drawRoundedRect(geometry(), 3,3);
-           painter->setPen(d->titleBarColor());
-           painter->drawText(textRect,
-                             Qt::TextSingleLine | Qt::TextShowMnemonic,  m_text);
+    QRectF textRect = painter->fontMetrics().boundingRect(noMnemonicText);
+    textRect.moveCenter(geometry().center());
 
-    } else if(isHovered() ||(m_action && m_action->menu() && m_action->menu()->isVisible())){
-        painter->setBrush(d->fontColor());
+    painter->setBrush(backgroundColor());
+    painter->setPen(foregroundColor());
+
+    if (isPressed()
+            || isHovered()
+            ||(m_action && m_action->menu() && m_action->menu()->isVisible())){
         painter->drawRoundedRect(geometry(), 3,3);
-        painter->setPen(d->titleBarColor());
-        painter->drawText(textRect,
-                          Qt::TextSingleLine | Qt::TextShowMnemonic,  m_text);
 
-
-    } else {
-
-        painter->setPen(d->fontColor());
-        painter->drawText(textRect,
-                          Qt::TextSingleLine | Qt::TextShowMnemonic,  m_text);
     }
-
-
+    painter->drawText(textRect,
+                      Qt::TextSingleLine | Qt::TextHideMnemonic,  m_text);
 
     painter->restore();
 }
