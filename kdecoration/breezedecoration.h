@@ -120,7 +120,7 @@ namespace Breeze
         void updateShadow();
         QSharedPointer<KDecoration2::DecorationShadow> createShadowObject( const float strengthScale );
         void setScaledCornerRadius();
-        AppMenuButtonGroup *m_menuButtons;
+        AppMenuButtonGroup *m_menuButtons = nullptr;
         
         //*@name border size
         //@{

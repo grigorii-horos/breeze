@@ -406,6 +406,9 @@ namespace Breeze
         // But the shadow is fine to animate like this!
         m_shadowAnimation->setDuration( cg.readEntry("AnimationDurationFactor", 1.0f) * 100.0f );
 
+        if(m_menuButtons)
+            m_menuButtons->setShowing(m_internalSettings->enableLIM() );
+
         // borders
         recalculateBorders();
 
@@ -477,9 +480,12 @@ namespace Breeze
 
         connect(m_menuButtons, &AppMenuButtonGroup::menuUpdated,
                 this, &Decoration::updateButtonsGeometry);
-        m_menuButtons->updateAppMenuModel();
 
-
+        if(m_internalSettings->enableLIM()){
+            m_menuButtons->updateAppMenuModel();
+        } else {
+            m_menuButtons->setShowing(false);
+        }
         updateButtonsGeometry();
     }
 

@@ -32,6 +32,9 @@ public:
     {
         if( m_opacity == value ) return;
         m_opacity = value;
+
+        setVisible(m_opacity>0.0);
+
         update();
     }
 

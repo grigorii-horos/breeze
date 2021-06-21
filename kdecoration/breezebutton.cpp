@@ -462,7 +462,10 @@ namespace Breeze
     //________________________________________________________________
     void Button::reconfigure()
     {
-
+        if(type()==DecorationButtonType::ApplicationMenu){
+            auto d = qobject_cast<Decoration*>(decoration());
+            setVisible( !d->internalSettings()->enableLIM() );
+        }
         // animation
         auto d = qobject_cast<Decoration*>(decoration());
         if( d )  m_animation->setDuration( d->animationsDuration() );
