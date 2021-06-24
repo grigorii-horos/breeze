@@ -99,6 +99,11 @@ namespace Breeze
                 QObject::connect(d->client().data(), &KDecoration2::DecoratedClient::iconChanged, b, [b]() { b->update(); });
                 break;
 
+                case DecorationButtonType::ApplicationMenu:
+                b->setVisible(!d->internalSettings()->enableLIM());
+                QObject::connect(decoration->settings().data(), &KDecoration2::DecorationSettings::reconfigured, b, &Button::reconfigure);
+                break;
+
                 default: break;
 
             }
