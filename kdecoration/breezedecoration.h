@@ -20,6 +20,7 @@
 #include <QPalette>
 #include <QVariant>
 #include <QVariantAnimation>
+#include <QMouseEvent>
 
 class QVariantAnimation;
 
@@ -156,6 +157,15 @@ namespace Breeze
         
         //*frame corner radius, scaled according to DPI
         qreal m_scaledCornerRadius = 3;
+
+        QMouseEvent* m_pressEvent = nullptr;
+
+
+        // Decoration interface
+    protected:
+        virtual void hoverMoveEvent(QHoverEvent *event) override;
+        virtual void mousePressEvent(QMouseEvent *event) override;
+        virtual void mouseReleaseEvent(QMouseEvent *event) override;
     };
 
     bool Decoration::hasBorders() const

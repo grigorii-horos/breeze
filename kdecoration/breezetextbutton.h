@@ -57,7 +57,17 @@ public:
     QAction *action() const;
     void setAction(QAction *newAction);
 
+    void setPressed(bool pressed){
+        m_isPressed = pressed;
+        update();
+    }
+
+    bool isPressed() const{
+        return KDecoration2::DecorationButton::isPressed() || m_isPressed;
+    }
+
 private:
+    bool m_isPressed = false;
     QColor foregroundColor() const;
     QColor backgroundColor() const;
 

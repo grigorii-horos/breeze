@@ -31,6 +31,7 @@
 #include <QTextStream>
 #include <QTimer>
 #include <QDBusConnection>
+#include <QMouseEvent>
 
 #if BREEZE_HAVE_X11
 #include <QX11Info>
@@ -980,6 +981,48 @@ namespace Breeze
             m_sizeGrip->deleteLater();
             m_sizeGrip = nullptr;
         }
+    }
+
+    void Decoration::hoverMoveEvent(QHoverEvent *event)
+    {
+        if(m_pressEvent) {
+            delete m_pressEvent;
+            m_pressEvent = nullptr;
+            auto btn = qobject_cast<TextButton*>(m_menuButtons->buttonAt(event->pos().x(), event->pos().y()));
+            btn->setPressed(false);
+        }
+
+
+        KDecoration2::Decoration::hoverMoveEvent(event);
+    }
+
+    void Decoration::mousePressEvent(QMouseEvent *event)
+    {
+        qDebug()<<"MousePress, eventPos:"<<event->pos();
+
+        auto btn = qobject_cast<TextButton*>(m_menuButtons->buttonAt(event->pos().x(), event->pos().y()));
+        if(!btn){
+            KDecoration2::Decoration::mousePressEvent(event);
+            return;
+        }
+        m_pressEvent = new QMouseEvent(event->type(), event->pos(), event->button(), event->buttons(), event->modifiers());
+        btn->setPressed(true);
+    }
+
+    void Decoration::mouseReleaseEvent(QMouseEvent *event)
+    {
+        qDebug()<<"MouseRelease; releaseEventPos: " <<event->pos();
+
+        if(m_pressEvent && m_pressEvent->pos()==event->pos()){
+            auto btn = qobject_cast<TextButton*>(m_menuButtons->buttonAt(event->pos().x(), event->pos().y()));
+            btn->setPressed(false);
+            KDecoration2::Decoration::mousePressEvent(m_pressEvent);
+
+            delete m_pressEvent;
+            m_pressEvent = nullptr;
+        }
+
+        KDecoration2::Decoration::mouseReleaseEvent(event);
     }
     
     void Decoration::setScaledCornerRadius()
