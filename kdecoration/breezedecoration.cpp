@@ -562,6 +562,37 @@ namespace Breeze
 //            const int captionOffset = captionMinWidth() + settings()->smallSpacing();
             const QRect availableRect = appMenuRect();
             m_menuButtons->setPos(availableRect.topLeft());
+            auto cR = captionRect();
+            auto actualCaptionRect = QRectF{
+                    0.0,0.0,
+                    textWidth(client().toStrongRef()->caption()),
+                    static_cast<qreal>(captionHeight())};
+
+            actualCaptionRect.moveCenter(cR.first.center());
+
+            if(cR.second.testFlag(Qt::AlignLeft)){
+                actualCaptionRect.moveLeft(cR.first.left());
+            } else if (cR.second.testFlag(Qt::AlignRight)){
+                actualCaptionRect.moveRight(cR.first.right());
+            }
+
+            QRectF realGeometry;
+
+            if(!m_menuButtons->showing()){
+
+                auto totalWidth = 0.0;
+                for( auto& btn: m_menuButtons->buttons() ){ totalWidth+=btn->size().width(); }
+
+                realGeometry = QRectF{
+                        m_menuButtons->pos().x(),
+                        m_menuButtons->pos().y(),
+                        totalWidth+m_menuButtons->spacing()*(m_menuButtons->buttons().size()-1),
+                        static_cast<qreal>(captionHeight()) };
+
+            } else {
+                realGeometry = m_menuButtons->geometry();
+            }
+            m_menuButtons->setAlwaysShow(!realGeometry.intersects(actualCaptionRect));
 
             m_menuButtons->setSpacing(0);
 //            m_menuButtons->updateOverflow(availableRect);
@@ -698,13 +729,14 @@ namespace Breeze
 
         painter->restore();
 
-//        // draw caption
-//        painter->setFont(s->font());
-//        painter->setPen( fontColor() );
-//        const auto cR = captionRect();
-//        const QString caption = painter->fontMetrics().elidedText(c->caption(), Qt::ElideMiddle, cR.first.width());
-//        painter->drawText(cR.first, cR.second | Qt::TextSingleLine, caption);
-
+        if(!m_menuButtons->showing() || m_menuButtons->alwaysShow() || m_menuButtons->buttons().empty()){
+            // draw caption
+            painter->setFont(s->font());
+            painter->setPen( fontColor() );
+            const auto cR = captionRect();
+            const QString caption = painter->fontMetrics().elidedText(c->caption(), Qt::ElideMiddle, cR.first.width());
+            painter->drawText(cR.first, cR.second | Qt::TextSingleLine, caption);
+        }
 
         // draw all buttons
         m_leftButtons->paint(painter, repaintRegion);
