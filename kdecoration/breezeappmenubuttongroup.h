@@ -86,6 +86,7 @@ public slots:
     void initAppMenuModel();
     void updateAppMenuModel();
     void updateOverflow(QRectF availableRect);
+    void trigger(KDecoration2::DecorationButton* btn);
     void trigger(int index);
     void triggerOverflow();
     void updateShowing();

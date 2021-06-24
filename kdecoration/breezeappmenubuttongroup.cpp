@@ -85,8 +85,7 @@ AppMenuButtonGroup::AppMenuButtonGroup(Decoration *decoration)
     auto *decoratedClient = decoration->client().toStrongRef().data();
     connect(decoratedClient, &KDecoration2::DecoratedClient::hasApplicationMenuChanged,
             this, &AppMenuButtonGroup::updateAppMenuModel);
-    connect(this, &AppMenuButtonGroup::requestActivateIndex,
-            this, &AppMenuButtonGroup::trigger);
+    connect(this, &AppMenuButtonGroup::requestActivateIndex, this, QOverload<int>::of(&AppMenuButtonGroup::trigger));
     connect(this, &AppMenuButtonGroup::requestActivateOverflow,
             this, &AppMenuButtonGroup::triggerOverflow);
 }
@@ -347,6 +346,18 @@ void AppMenuButtonGroup::updateOverflow(QRectF availableRect)
     setOverflowing(showOverflow);
 }
 
+void AppMenuButtonGroup::trigger(KDecoration2::DecorationButton *btn)
+{
+    int index = -1;
+    QPointer<KDecoration2::DecorationButton> currentButton;
+    do {
+        currentButton = buttons().value(++index);
+    } while (index<buttons().size() && btn!=currentButton);
+    if(index!=buttons().size()){
+        trigger(index);
+    }
+}
+
 void AppMenuButtonGroup::trigger(int buttonIndex) {
     // qCDebug(category) << "AppMenuButtonGroup::trigger" << buttonIndex;
     KDecoration2::DecorationButton* button = buttons().value(buttonIndex);
@@ -399,6 +410,8 @@ void AppMenuButtonGroup::trigger(int buttonIndex) {
         QPoint position = buttonRect.topLeft().toPoint();
         QPoint rootPosition(position);
         rootPosition += deco->windowPos();
+        rootPosition.ry() = deco->windowPos().y()-Metrics::TitleBar_BottomMargin*deco->settings()->smallSpacing();
+
         // qCDebug(category) << "    windowPos" << windowPos;
 
         // auto connection( QX11Info::connection() );
@@ -494,6 +507,8 @@ bool AppMenuButtonGroup::eventFilter(QObject *watched, QEvent *event)
 
         QPoint decoPos(e->globalPos());
         decoPos -= deco->windowPos();
+        decoPos.ry() += deco->titleBar().height();
+
 //        decoPos.ry() += deco->titleBarHeight();
         // qCDebug(category) << "MouseMove";
         // qCDebug(category) << "       globalPos" << e->globalPos();

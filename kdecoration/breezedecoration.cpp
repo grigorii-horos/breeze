@@ -283,6 +283,17 @@ namespace Breeze
             }
         );
 
+        connect(this, &Decoration::sectionUnderMouseChanged, this,[this](Qt::WindowFrameSection section){
+            auto wasHovered = m_menuButtons->hovered();
+            auto nowHovered = section==Qt::TitleBarArea;
+            if(wasHovered==nowHovered) return;
+
+            m_menuButtons->setHovered(nowHovered);
+
+            update(titleBar());
+
+        });
+
         connect(c, &KDecoration2::DecoratedClient::activeChanged, this, &Decoration::updateAnimationState);
         connect(c, &KDecoration2::DecoratedClient::widthChanged, this, &Decoration::updateTitleBar);
         connect(c, &KDecoration2::DecoratedClient::maximizedChanged, this, &Decoration::updateTitleBar);
@@ -1018,20 +1029,16 @@ namespace Breeze
     void Decoration::hoverMoveEvent(QHoverEvent *event)
     {
         if(m_pressEvent) {
+            auto btn = qobject_cast<TextButton*>(m_menuButtons->buttonAt(m_pressEvent->pos().x(), m_pressEvent->pos().y()));
+            if (btn) btn->setPressed(false);
             delete m_pressEvent;
             m_pressEvent = nullptr;
-            auto btn = qobject_cast<TextButton*>(m_menuButtons->buttonAt(event->pos().x(), event->pos().y()));
-            btn->setPressed(false);
         }
-
-
         KDecoration2::Decoration::hoverMoveEvent(event);
     }
 
     void Decoration::mousePressEvent(QMouseEvent *event)
     {
-        qDebug()<<"MousePress, eventPos:"<<event->pos();
-
         auto btn = qobject_cast<TextButton*>(m_menuButtons->buttonAt(event->pos().x(), event->pos().y()));
         if(!btn){
             KDecoration2::Decoration::mousePressEvent(event);
@@ -1043,12 +1050,11 @@ namespace Breeze
 
     void Decoration::mouseReleaseEvent(QMouseEvent *event)
     {
-        qDebug()<<"MouseRelease; releaseEventPos: " <<event->pos();
-
         if(m_pressEvent && m_pressEvent->pos()==event->pos()){
             auto btn = qobject_cast<TextButton*>(m_menuButtons->buttonAt(event->pos().x(), event->pos().y()));
             btn->setPressed(false);
-            KDecoration2::Decoration::mousePressEvent(m_pressEvent);
+            m_menuButtons->trigger(btn);
+//            KDecoration2::Decoration::mousePressEvent(m_pressEvent);
 
             delete m_pressEvent;
             m_pressEvent = nullptr;

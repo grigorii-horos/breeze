@@ -18,7 +18,7 @@ TextButton::TextButton(const QPointer<KDecoration2::Decoration> &decoration,int 
   , m_animation( new QVariantAnimation( this ) )
   , m_buttonIndex(row)
 {
-    setEnabled(true);
+    setCheckable(true);
 
     m_animation->setStartValue( 0.0 );
     m_animation->setEndValue( 1.0 );
@@ -34,23 +34,6 @@ TextButton::TextButton(const QPointer<KDecoration2::Decoration> &decoration,int 
 
     connect( this, &KDecoration2::DecorationButton::hoveredChanged, this, &TextButton::updateAnimationState );
 
-    connect(this, &TextButton::clicked, this, [this,d](){
-        if(!m_action || !m_action->menu()) {
-            return;
-        }
-
-        auto menu = m_action->menu();
-
-        auto pt = d->windowPos()+QPoint(geometry().x(),- Metrics::TitleBar_BottomMargin*d->settings()->smallSpacing());
-
-        auto geom = menu->geometry();
-
-        geom.setTopLeft(pt);
-
-        menu->setGeometry(geom);
-        menu->adjustSize();
-        menu->show();
-    });
 
     // animation
     if( d )  m_animation->setDuration( d->animationsDuration() );
@@ -68,9 +51,10 @@ void TextButton::setAction(QAction *newAction)
 
 QColor TextButton::foregroundColor() const
 {
-    auto d = qobject_cast<Decoration*>( decoration() );
+    const auto *d = qobject_cast< Decoration* >( decoration() );
+    const auto *bg = qobject_cast< AppMenuButtonGroup* >( parent() );
 
-    if(isPressed() || isHovered() || (m_action && m_action->menu() && m_action->menu()->isVisible())){
+    if(isPressed() || (isHovered() && !bg->isMenuOpen()) || isChecked()){
         return d->titleBarColor();
     }
     return d->fontColor();
@@ -78,12 +62,14 @@ QColor TextButton::foregroundColor() const
 
 QColor TextButton::backgroundColor() const
 {
-    auto d = qobject_cast<Decoration*>( decoration() );
+    const auto *d = qobject_cast< Decoration* >( decoration() );
+    const auto *bg = qobject_cast< AppMenuButtonGroup* >( parent() );
+
 
     if(isPressed()){
         return KColorUtils::mix( d->titleBarColor(), d->fontColor(), 0.3 );
     }
-    if(isHovered()){
+    if((isHovered() && !bg->isMenuOpen()) || isChecked()){
         return d->fontColor();
     }
     return d->titleBarColor();
@@ -119,8 +105,10 @@ void TextButton::paint(QPainter *painter, const QRect &repaintArea)
 {
 
     Q_UNUSED(repaintArea)
+    const auto *bg = qobject_cast< AppMenuButtonGroup* >( parent() );
 
-    if (!decoration()) return;
+
+    if (!decoration() || !bg) return;
 
     painter->save();
 
@@ -135,9 +123,9 @@ void TextButton::paint(QPainter *painter, const QRect &repaintArea)
     painter->setPen(foregroundColor());
 
     if (isPressed()
-            || isHovered()
-            ||(m_action && m_action->menu() && m_action->menu()->isVisible())){
-        painter->drawRoundedRect(geometry(), 3,3);
+        || (isHovered() && !bg->isMenuOpen())
+        || isChecked()){
+        painter->drawRoundedRect(geometry(), 3, 3);
 
     }
     painter->drawText(textRect,
