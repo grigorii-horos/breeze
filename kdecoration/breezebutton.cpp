@@ -100,8 +100,12 @@ namespace Breeze
                 break;
 
                 case DecorationButtonType::ApplicationMenu:
+                    QObject::connect(b,&Button::visibilityChanged, b, [d,b](bool visible){
+                        if(d->internalSettings()->enableLIM() && visible){
+                            b->setVisible(false);
+                        }
+                    });
                 b->setVisible(!d->internalSettings()->enableLIM());
-                QObject::connect(decoration->settings().data(), &KDecoration2::DecorationSettings::reconfigured, b, &Button::reconfigure);
                 break;
 
                 default: break;
