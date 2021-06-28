@@ -112,12 +112,6 @@ void TextButton::paint(QPainter *painter, const QRect &repaintArea)
 
     painter->save();
 
-    auto noMnemonicText = m_text;
-    noMnemonicText.remove('&');
-
-
-    QRectF textRect = painter->fontMetrics().boundingRect(noMnemonicText);
-    textRect.moveCenter(geometry().center());
 
     painter->setBrush(backgroundColor());
     painter->setPen(foregroundColor());
@@ -128,9 +122,9 @@ void TextButton::paint(QPainter *painter, const QRect &repaintArea)
         painter->drawRoundedRect(geometry(), 3, 3);
 
     }
-    painter->drawText(textRect,
-                      Qt::TextSingleLine | Qt::TextHideMnemonic,  m_text);
 
+    painter->drawText(geometry(),
+                      Qt::TextSingleLine | Qt::AlignCenter | Qt::TextHideMnemonic, m_text);
     painter->restore();
 }
 void TextButton::updateAnimationState( bool hovered )
