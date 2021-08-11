@@ -565,6 +565,53 @@ void AppMenuButtonGroup::onMenuAboutToHide()
     setCurrentIndex(-1);
 }
 
+QAction* AppMenuButtonGroup::findActionUnderCursor(QPoint pt)
+{
+    auto d = qobject_cast<Decoration*>(decoration());
+    pt.ry()-=(d->titleBar().height()+Metrics::TitleBar_BottomMargin*d->settings()->smallSpacing());
+    pt.rx()-=(openedMenu()->x()-d->windowPos().x());
+
+    QMenu* nestedMenu = m_currentMenu;
+    QAction* actionAtPt = nullptr;
+    while(nestedMenu && !actionAtPt){
+        actionAtPt = nestedMenu->actionAt(pt);
+        qDebug()<<pt;
+        if(!actionAtPt){
+            if(nestedMenu->activeAction()){
+                pt.rx()-=nestedMenu->width();
+                nestedMenu = nestedMenu->activeAction()->menu();
+                if(nestedMenu){
+                    pt.ry() -= nestedMenu->y() - d->windowPos().y() + Metrics::TitleBar_BottomMargin*d->settings()->smallSpacing();
+                }
+            } else {
+                nestedMenu = nullptr;
+            }
+
+        }
+
+    }
+    return actionAtPt;
+}
+
+void AppMenuButtonGroup::setActiveAction(QPoint pt)
+{
+    auto actionAtPt = findActionUnderCursor(pt);
+    if(!actionAtPt){
+        return;
+    }
+    auto nestedMenu = qobject_cast<QMenu*>(actionAtPt->parent());
+    if(!nestedMenu){
+        return;
+    }
+    qDebug()<<actionAtPt->text();
+    nestedMenu->setActiveAction(actionAtPt);
+}
+
+void AppMenuButtonGroup::triggerAction(QPoint pt)
+{
+
+}
+
 void AppMenuButtonGroup::onShowingChanged(bool showing)
 {
     if (m_animationEnabled) {
@@ -579,6 +626,19 @@ void AppMenuButtonGroup::onShowingChanged(bool showing)
     } else {
         setOpacity(showing ? 1 : 0);
     }
+}
+
+QMenu *AppMenuButtonGroup::openedMenu() const
+{
+    return m_currentMenu;
+}
+
+void AppMenuButtonGroup::setOpenedMenu(QMenu *newOpenedMenu)
+{
+    if (m_currentMenu == newOpenedMenu)
+        return;
+    m_currentMenu = newOpenedMenu;
+    emit openedMenuChanged();
 }
 
 } // namespace Material

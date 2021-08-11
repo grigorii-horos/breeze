@@ -51,6 +51,7 @@ public:
     Q_PROPERTY(bool animationEnabled READ animationEnabled WRITE setAnimationEnabled NOTIFY animationEnabledChanged)
     Q_PROPERTY(int animationDuration READ animationDuration WRITE setAnimationDuration NOTIFY animationDurationChanged)
     Q_PROPERTY(qreal opacity READ opacity WRITE setOpacity NOTIFY opacityChanged)
+    Q_PROPERTY(QMenu* openedMenu READ openedMenu WRITE setOpenedMenu NOTIFY openedMenuChanged)
 
     int currentIndex() const;
     void setCurrentIndex(int set);
@@ -82,6 +83,9 @@ public:
 
     void unPressAllButtons();
 
+    QMenu *openedMenu() const;
+    void setOpenedMenu(QMenu *newOpenedMenu);
+
 public slots:
     void initAppMenuModel();
     void updateAppMenuModel();
@@ -91,6 +95,8 @@ public slots:
     void triggerOverflow();
     void updateShowing();
     void onMenuAboutToHide();
+    void setActiveAction(QPoint pt);
+    void triggerAction(QPoint pt);
 
 private slots:
     void onShowingChanged(bool hovered);
@@ -109,11 +115,15 @@ signals:
     void animationDurationChanged(int);
     void opacityChanged(qreal);
 
+    void openedMenuChanged();
+
 protected:
     bool eventFilter(QObject *watched, QEvent *event) override;
 
+
 private:
     void resetButtons();
+    QAction* findActionUnderCursor(QPoint pt);
 
     AppMenuModel *m_appMenuModel;
     int m_currentIndex;

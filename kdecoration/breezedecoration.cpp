@@ -1028,13 +1028,26 @@ namespace Breeze
 
     void Decoration::hoverMoveEvent(QHoverEvent *event)
     {
+        if(m_menuButtons && m_menuButtons->isMenuOpen() && m_menuButtons->openedMenu()){
+            m_menuButtons->setActiveAction(event->pos());
+        }
+
         if(m_pressEvent) {
             auto btn = qobject_cast<TextButton*>(m_menuButtons->buttonAt(m_pressEvent->pos().x(), m_pressEvent->pos().y()));
-            if (btn) btn->setPressed(false);
+            btn->setPressed(false);
+
+            if (btn && m_pressEvent->y()<event->pos().y()){
+                m_menuButtons->trigger(btn);
+
+            }
+
             delete m_pressEvent;
             m_pressEvent = nullptr;
         }
-        KDecoration2::Decoration::hoverMoveEvent(event);
+        if(!m_menuButtons->isMenuOpen())
+            KDecoration2::Decoration::hoverMoveEvent(event);
+
+
     }
 
     void Decoration::mousePressEvent(QMouseEvent *event)
@@ -1050,7 +1063,19 @@ namespace Breeze
 
     void Decoration::mouseReleaseEvent(QMouseEvent *event)
     {
-        if(m_pressEvent && m_pressEvent->pos()==event->pos()){
+        if(m_menuButtons && m_menuButtons->isMenuOpen() && m_menuButtons->openedMenu()){
+
+            auto adjustedpt = event->pos();
+            adjustedpt.ry()-=(titleBar().height()+Metrics::TitleBar_BottomMargin*settings()->smallSpacing());
+            adjustedpt.rx()-=(m_menuButtons->openedMenu()->x()-windowPos().x());
+            auto act = m_menuButtons->openedMenu()->actionAt(adjustedpt);
+            if(act) act->trigger();
+            m_menuButtons->openedMenu()->close();
+        }
+
+
+
+        if(m_menuButtons && m_pressEvent && m_pressEvent->pos()==event->pos()){
             auto btn = qobject_cast<TextButton*>(m_menuButtons->buttonAt(event->pos().x(), event->pos().y()));
             btn->setPressed(false);
             m_menuButtons->trigger(btn);
