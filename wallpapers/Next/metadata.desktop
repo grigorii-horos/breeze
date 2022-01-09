@@ -2,18 +2,24 @@
 Name=Patak
 Name[ca]=Patak
 Name[cs]=Patak
+Name[da]=Patak
+Name[de]=Patak
 Name[el]=Patak
+Name[en_GB]=Patak
 Name[es]=Patak
 Name[eu]=Patak
 Name[fr]=Patak
 Name[hu]=Patak
+Name[ia]=Patak
 Name[it]=Patak
 Name[nl]=Patak
+Name[pl]=Patak
 Name[pt_BR]=Patak
 Name[sl]=Patak
 Name[sv]=Patak
 Name[uk]=Патак
 Name[x-test]=xxPatakxx
+Name[zh_CN]=Patak 溪流
 
 X-KDE-PluginInfo-Name=Next
 X-KDE-PluginInfo-Author=Áron Kovács

@@ -22,7 +22,6 @@
 #include <KColorUtils>
 #include <KIconLoader>
 
-#include <QAbstractSpinBox>
 #include <QApplication>
 #include <QBitmap>
 #include <QCheckBox>
@@ -49,6 +48,7 @@
 #include <QTreeView>
 #include <QWidgetAction>
 #include <QMdiArea>
+#include <QDialogButtonBox>
 
 #if BREEZE_HAVE_QTQUICK
 #include <QQuickWindow>
@@ -104,6 +104,7 @@ namespace BreezePrivate
         //* paint
         void paint( QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const override
         {
+            painter->setRenderHints( QPainter::Antialiasing );
             // if the app sets an item delegate that isn't the default, use its drawing...
             if( _proxy && _proxy->metaObject()->className() != QStringLiteral("QComboBoxDelegate") ) {
                 _proxy.data()->paint( painter, option, index );
@@ -327,6 +328,10 @@ namespace Breeze
 
             widget->setAttribute( Qt::WA_Hover );
 
+        } else if( qobject_cast<QFrame*>( widget ) && widget->parent() && widget->parent()->inherits( "KTitleWidget" ) ) {
+
+            widget->setAutoFillBackground( false );
+
         }
 
         if( qobject_cast<QScrollBar*>( widget ) )
@@ -412,10 +417,26 @@ namespace Breeze
         }
         else if ( qobject_cast<QDialog*> (widget) ) {
             widget->setAttribute(Qt::WA_StyledBackground);
-        } else if ( auto btn = qobject_cast<QPushButton*> (widget) ) {
-            btn->setAutoDefault(false);
         } else if ( auto spbx = qobject_cast<QAbstractSpinBox*> (widget) ) {
             spbx->setAlignment(Qt::AlignCenter);
+        } else if (auto pushButton = qobject_cast<QPushButton*>(widget)) {
+            QDialog *dialog = nullptr;
+            auto p = pushButton->parentWidget();
+            while (p && !p->isWindow()) {
+                p = p->parentWidget();
+                if (auto d = qobject_cast<QDialog*>(p)) {
+                    dialog = d;
+                }
+            }
+            // Internally, QPushButton::autoDefault can be explicitly on,
+            // explicitly off, or automatic (enabled if in a QDialog).
+            // If autoDefault is explicitly on and not in a dialog,
+            // or on/automatic in a dialog and has a QDialogButtonBox parent,
+            // explicitly enable autoDefault, else explicitly disable autoDefault.
+            bool autoDefaultNoDialog = pushButton->autoDefault() && !dialog;
+            bool autoDefaultInDialog = pushButton->autoDefault() && dialog;
+            auto dialogButtonBox = qobject_cast<QDialogButtonBox*>(pushButton->parent());
+            pushButton->setAutoDefault(autoDefaultNoDialog || (autoDefaultInDialog && dialogButtonBox));
         }
 
 
@@ -2354,55 +2375,51 @@ namespace Breeze
         if( !spinBoxOption ) return ParentStyleClass::subControlRect( CC_SpinBox, option, subControl, widget );
         const bool flat( !spinBoxOption->frame );
 
-        const int frameWidth( pixelMetric( PM_SpinBoxFrameWidth, option, widget ) );
-        const int buttonSize( option->fontMetrics.height() + 2*frameWidth );
-
         // copy rect
         auto rect( option->rect );
-
-        if (subControl == SC_SpinBoxUp || subControl == SC_SpinBoxDown) {
-            // compensate for 1px margin + 1px border
-            rect.adjust( 2, 2, -2, -2 );
-        }
 
         switch( subControl )
         {
             case SC_SpinBoxFrame: return flat ? QRect():rect;
 
             case SC_SpinBoxUp:
-            {
-                auto r = rect;
-                r.setWidth(buttonSize);
-                r.moveRight(rect.right());
-                return r;
-            }
-
             case SC_SpinBoxDown:
             {
-                auto r = rect;
-                r.setWidth(buttonSize);
-                r.moveLeft(rect.left());
-                return r;
+
+                // take out frame width
+                if( !flat && rect.height() >= 2*Metrics::Frame_FrameWidth + Metrics::SpinBox_ArrowButtonWidth ) rect = insideMargin( rect, Metrics::Frame_FrameWidth );
+
+                QRect arrowRect;
+                arrowRect = QRect(
+                    rect.right() - Metrics::SpinBox_ArrowButtonWidth + 1,
+                    rect.top(),
+                    Metrics::SpinBox_ArrowButtonWidth,
+                    rect.height() );
+
+                const int arrowHeight( qMin( rect.height(), int(Metrics::SpinBox_ArrowButtonWidth) ) );
+                arrowRect = centerRect( arrowRect, Metrics::SpinBox_ArrowButtonWidth, arrowHeight );
+                arrowRect.setHeight( arrowHeight/2 );
+                if( subControl == SC_SpinBoxDown ) arrowRect.translate( 0, arrowHeight/2 );
+
+                return visualRect( option, arrowRect );
+
             }
 
             case SC_SpinBoxEditField:
             {
                 const bool showButtons = spinBoxOption->buttonSymbols != QAbstractSpinBox::NoButtons;
-                const int frameWidth( pixelMetric( PM_SpinBoxFrameWidth, option, widget ) );
-                const int buttonSize( option->fontMetrics.height() + 2*frameWidth );
 
-                QRect r = rect;
+                QRect labelRect = rect;
                 if( showButtons ) {
-                    auto w = r.width();
-                    r.setLeft(buttonSize);
-                    r.setRight(w-buttonSize);
+                    labelRect.setRight( rect.right() - Metrics::SpinBox_ArrowButtonWidth );
                 }
 
                 // remove right side line editor margins
-                if( !flat && r.height() >= option->fontMetrics.height() + 2*frameWidth )
-                { r.adjust( frameWidth, frameWidth, -frameWidth, -frameWidth ); }
+                const int frameWidth( pixelMetric( PM_SpinBoxFrameWidth, option, widget ) );
+                if( !flat && labelRect.height() >= option->fontMetrics.height() + 2*frameWidth )
+                { labelRect.adjust( frameWidth, frameWidth, showButtons ? 0 : -frameWidth, -frameWidth ); }
 
-                return visualRect( option, r );
+                return visualRect( option, labelRect );
 
             }
 
@@ -2696,10 +2713,9 @@ namespace Breeze
         // make sure there is enough height for the button
         size.setHeight( qMax( size.height(), int(Metrics::SpinBox_ArrowButtonWidth) ) );
 
-        // add in the buttons, which are square w/ length of height, and we have two of them
+        // add button width and spacing
         const bool showButtons = spinBoxOption->buttonSymbols != QAbstractSpinBox::NoButtons;
-        const int buttonSize( option->fontMetrics.height() + 2*frameWidth );
-        if( showButtons ) size.rwidth() += buttonSize*2;
+        if( showButtons ) size.rwidth() += Metrics::SpinBox_ArrowButtonWidth;
 
         return size;
 
@@ -5652,11 +5668,16 @@ namespace Breeze
         if( !tabOption ) return true;
 
         // palette and state
-        const auto& palette( option->palette );
-        const State& state( option->state );
-        const bool enabled( state & State_Enabled );
-        const bool selected( state & State_Selected );
-        const bool mouseOver( enabled && !selected && ( state & State_MouseOver ) );
+        const bool enabled = option->state & State_Enabled;
+        const bool activeFocus = option->state & State_HasFocus;
+        const bool visualFocus = activeFocus && option->state & QStyle::State_KeyboardFocusChange;
+        const bool hovered = option->state & State_MouseOver;
+        const bool down = option->state & State_Sunken;
+        const bool selected = option->state & State_Selected;
+        const bool north = tabOption->shape == QTabBar::RoundedNorth || tabOption->shape == QTabBar::TriangularNorth;
+        const bool south = tabOption->shape == QTabBar::RoundedSouth || tabOption->shape == QTabBar::TriangularSouth;
+        const bool west = tabOption->shape == QTabBar::RoundedWest || tabOption->shape == QTabBar::TriangularWest;
+        const bool east = tabOption->shape == QTabBar::RoundedEast || tabOption->shape == QTabBar::TriangularEast;
 
         // check if tab is being dragged
         const bool isDragged( widget && selected && painter->device() != widget );
@@ -5666,9 +5687,8 @@ namespace Breeze
         auto rect( option->rect );
 
         // update mouse over animation state
-        _animations->tabBarEngine().updateState( widget, rect.topLeft(), AnimationHover, mouseOver );
-        const bool animated( enabled && !selected && _animations->tabBarEngine().isAnimated( widget, rect.topLeft(), AnimationHover ) );
-        const qreal opacity( _animations->tabBarEngine().opacity( widget, rect.topLeft(), AnimationHover ) );
+        _animations->tabBarEngine().updateState( widget, rect.topLeft(), AnimationHover, hovered && !selected && enabled );
+        const qreal animation = _animations->tabBarEngine().opacity(widget, rect.topLeft(), AnimationHover);
 
         // lock state
         if( selected && widget && isDragged ) _tabBarData->lock( widget );
@@ -5699,144 +5719,72 @@ namespace Breeze
 
         // overlap
         // for QtQuickControls, ovelap is already accounted of in the option. Unlike in the qwidget case
-        const int overlap( isQtQuickControl ? 0:Metrics::TabBar_TabOverlap );
-
-        bool bottom = false;
+        const int overlap = isQtQuickControl ? 0 : Metrics::TabBar_TabOverlap;
 
         // adjust rect and define corners based on tabbar orientation
         Corners corners;
-        switch( tabOption->shape )
-        {
+        switch(tabOption->shape) {
             case QTabBar::RoundedNorth:
-            case QTabBar::TriangularNorth:
-            if( selected )
-            {
-
-                corners = CornerTopLeft|CornerTopRight;
-                rect.adjust( 0, 0, 0, 1 );
-
+            case QTabBar::TriangularNorth: if (selected) {
+                corners = CornersTop;
             } else {
-
-                rect.adjust( 0, 0, 0, -1 );
-                if( isFirst ) corners |= CornerTopLeft;
-                if( isLast ) corners |= CornerTopRight;
-                if( isRightOfSelected ) rect.adjust( -Metrics::Frame_FrameRadius, 0, 0, 0 );
-                if( isLeftOfSelected ) rect.adjust( 0, 0, Metrics::Frame_FrameRadius, 0 );
-                else if( !isLast ) rect.adjust( 0, 0, overlap, 0 );
-
-            }
-            break;
+                if(isFirst) corners |= CornerTopLeft;
+                if(isLast) corners |= CornerTopRight;
+                if(isRightOfSelected) rect.adjust(-Metrics::Frame_FrameRadius, 0, 0, 0);
+                if(isLeftOfSelected) rect.adjust(0, 0, Metrics::Frame_FrameRadius, 0);
+                else if(!isLast) rect.adjust(0, 0, overlap, 0);
+            } break;
 
             case QTabBar::RoundedSouth:
-            case QTabBar::TriangularSouth:
-            if( selected )
-            {
-
-                corners = CornerBottomLeft|CornerBottomRight;
-                rect.adjust( 0, - 1, 0, 0 );
-                bottom = true;
-
+            case QTabBar::TriangularSouth: if (selected) {
+                corners = CornersBottom;
             } else {
-
-                rect.adjust( 0, 1, 0, 0 );
                 if( isFirst ) corners |= CornerBottomLeft;
                 if( isLast ) corners |= CornerBottomRight;
                 if( isRightOfSelected ) rect.adjust( -Metrics::Frame_FrameRadius, 0, 0, 0 );
                 if( isLeftOfSelected ) rect.adjust( 0, 0, Metrics::Frame_FrameRadius, 0 );
                 else if( !isLast ) rect.adjust( 0, 0, overlap, 0 );
-
-            }
-            break;
+            } break;
 
             case QTabBar::RoundedWest:
-            case QTabBar::TriangularWest:
-            if( selected )
-            {
-                corners = CornerTopLeft|CornerBottomLeft;
-                rect.adjust( 0, 0, 1, 0 );
-
+            case QTabBar::TriangularWest: if (selected) {
+                corners = CornersLeft;
             } else {
-
-                rect.adjust( 0, 0, -1, 0 );
                 if( isFirst ) corners |= CornerTopLeft;
                 if( isLast ) corners |= CornerBottomLeft;
                 if( isRightOfSelected ) rect.adjust( 0, -Metrics::Frame_FrameRadius, 0, 0 );
                 if( isLeftOfSelected ) rect.adjust( 0, 0, 0, Metrics::Frame_FrameRadius );
                 else if( !isLast ) rect.adjust( 0, 0, 0, overlap );
-
-            }
-            break;
+            } break;
 
             case QTabBar::RoundedEast:
-            case QTabBar::TriangularEast:
-            if( selected )
-            {
-
-                corners = CornerTopRight|CornerBottomRight;
-                rect.adjust( -1, 0, 0, 0 );
-
+            case QTabBar::TriangularEast: if (selected) {
+                corners = CornersRight;
             } else {
-
-                rect.adjust( 1, 0, 0, 0 );
                 if( isFirst ) corners |= CornerTopRight;
                 if( isLast ) corners |= CornerBottomRight;
                 if( isRightOfSelected ) rect.adjust( 0, -Metrics::Frame_FrameRadius, 0, 0 );
                 if( isLeftOfSelected ) rect.adjust( 0, 0, 0, Metrics::Frame_FrameRadius );
                 else if( !isLast ) rect.adjust( 0, 0, 0, overlap );
-
-            }
-            break;
+            } break;
 
             default: break;
         }
 
-        // color
-        QColor color;
-        if( selected )
-        {
-
-            bool documentMode = tabOption->documentMode;
-
-            // flag passed to QStyleOptionTab is unfortunately not reliable enough
-            // also need to check on parent widget
-            const auto tabWidget = ( widget && widget->parentWidget() ) ? qobject_cast<const QTabWidget *>( widget->parentWidget() ) : nullptr;
-            documentMode |= ( tabWidget ? tabWidget->documentMode() : true );
-
-            color = (documentMode&&!isQtQuickControl&&!hasAlteredBackground(widget)) ? palette.color( QPalette::Window ) : _helper->frameBackgroundColor( palette );
-
-        } else {
-
-            const auto normal( _helper->alphaColor( palette.color( QPalette::Shadow ), 0.2 ) );
-            const auto hover( _helper->alphaColor( _helper->hoverColor( palette ), 0.2 ) );
-            if( animated ) color = KColorUtils::mix( normal, hover, opacity );
-            else if( mouseOver ) color = hover;
-            else color = normal;
-
-        }
-
-        // outline
-        const auto outline( selected ? _helper->alphaColor( palette.color( QPalette::WindowText ), 0.25 ) : QColor() );
-
-        QColor accent;
-        if ( selected )
-        {
-            accent = palette.color( QPalette::Active, QPalette::Highlight );
-        }
-
-        // render
-        if( selected )
-        {
-
-            QRegion oldRegion( painter->clipRegion() );
-            painter->setClipRect( option->rect, Qt::IntersectClip );
-            _helper->renderTabBarTab( painter, rect, color, accent, outline, corners, true, bottom );
-            painter->setClipRegion( oldRegion );
-
-        } else {
-
-            _helper->renderTabBarTab( painter, rect, color, accent, outline, corners, true, bottom );
-
-        }
+        QHash<QByteArray, bool> stateProperties;
+        stateProperties["enabled"] = enabled;
+        stateProperties["visualFocus"] = visualFocus;
+        stateProperties["hovered"] = hovered;
+        stateProperties["down"] = down;
+        stateProperties["selected"] = selected;
+        stateProperties["documentMode"] = true;
+        stateProperties["north"] = north;
+        stateProperties["south"] = south;
+        stateProperties["west"] = west;
+        stateProperties["east"] = east;
+        stateProperties["isQtQuickControl"] = isQtQuickControl;
+        stateProperties["hasAlteredBackground"] = hasAlteredBackground(widget);
+        _helper->renderTabBarTab(painter, rect, option->palette, stateProperties, corners, animation);
 
         return true;
 
@@ -6838,13 +6786,6 @@ namespace Breeze
 
         // render
         _helper->renderArrow( painter, arrowRect, color, orientation );
-
-        painter->setPen( _helper->separatorColor( palette ));
-        if (subControl == SC_SpinBoxUp) {
-            painter->drawLine(QLine(arrowRect.topLeft()+QPoint(0, 2), arrowRect.bottomLeft()-QPoint(0, 2)));
-        } else {
-            painter->drawLine(QLine(arrowRect.topRight()+QPoint(0, 2), arrowRect.bottomRight()-QPoint(0, 2)));
-        }
 
     }
 
