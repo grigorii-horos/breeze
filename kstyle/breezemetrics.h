@@ -17,17 +17,18 @@ namespace Breeze
     {
         /* Using 1 instead of slightly more than 1 causes symbols drawn with
          * pen strokes to look skewed. The exact amount added does not matter
-         * as long as it isn't too visible.
+         * as long as it isn't too visible. Even with QPen::setCosmetic(true),
+         * 1px pen widths still look slightly worse.
          */
         // The standard pen stroke width for symbols.
-        static constexpr qreal Symbol = 1.01;
+        static constexpr qreal Symbol = 1.001;
 
         // The standard pen stroke width for frames.
-        static constexpr int Frame = 1;
+        static constexpr qreal Frame = 1.001;
 
         // The standard pen stroke width for shadows.
-        static constexpr int Shadow = 1;
-        
+        static constexpr qreal Shadow = 1.001;
+
         // A value for pen width arguments to make it clear that there is no pen stroke
         static constexpr int NoPen = 0;
     };
@@ -50,6 +51,7 @@ namespace Breeze
         // menu items
         static constexpr int Menu_FrameWidth = 0;
         static constexpr int MenuItem_MarginWidth = 8;
+        static constexpr int MenuItem_ExtraLeftMargin = 4;
         static constexpr int MenuItem_MarginHeight = 4;
         static constexpr int MenuItem_ItemSpacing = 4;
         static constexpr int MenuItem_SeparatorPadding = 0;
@@ -88,7 +90,7 @@ namespace Breeze
 
         // scrollbars
         static constexpr int ScrollBar_Extend = 21;
-        static constexpr int ScrollBar_SliderWidth = 6;
+        static constexpr int ScrollBar_SliderWidth = 10;
         static constexpr int ScrollBar_MinSliderHeight = 20;
         static constexpr int ScrollBar_NoButtonHeight = (ScrollBar_Extend-ScrollBar_SliderWidth)/2;
         static constexpr int ScrollBar_SingleButtonHeight = ScrollBar_Extend;

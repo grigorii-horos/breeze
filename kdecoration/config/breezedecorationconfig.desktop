@@ -5,11 +5,11 @@ Type=Service
 X-KDE-ServiceTypes=KCModule
 
 X-KDE-Library=org.kde.kdecoration2/breezedecoration
-X-KDE-PluginKeyword=kcmodule
 X-KDE-ParentApp=kcontrol
 X-KDE-Weight=60
 
 Name=Breeze Window Decoration
+Name[ar]=زخرفة نوافذ نسيم
 Name[az]=Breeze Pəncərə Tərtibatı
 Name[ca]=Decoració de les finestres Brisa
 Name[ca@valencia]=Decoració de les finestres Brisa

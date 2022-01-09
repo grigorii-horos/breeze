@@ -1,9 +1,10 @@
 cmake_minimum_required(VERSION 3.16)
 project(breeze)
-set(PROJECT_VERSION "5.22.5")
+set(PROJECT_VERSION "5.22.90")
 set(PROJECT_VERSION_MAJOR 5)
 
 set(KF5_MIN_VERSION "5.82")
+set(KDE_COMPILERSETTINGS_LEVEL "5.82")
 set(QT_MIN_VERSION "5.15.0")
 
 include(GenerateExportHeader)
@@ -40,11 +41,8 @@ if (WITH_WALLPAPERS)
     add_subdirectory(wallpapers)
 endif()
 
-find_package(KF5Package ${KF5_MIN_VERSION} CONFIG REQUIRED)
-kpackage_install_package(lookandfeel.dark org.kde.breezedark.desktop look-and-feel plasma)
-kpackage_install_package(lookandfeel.twilight org.kde.breezetwilight.desktop look-and-feel plasma)
 if(EXISTS ${CMAKE_SOURCE_DIR}/po AND IS_DIRECTORY ${CMAKE_SOURCE_DIR}/po)
-    find_package(KF5I18n CONFIG REQUIRED)
+    find_package(KF5I18n ${KF5_MIN_VERSION} CONFIG REQUIRED)
     ki18n_install(po)
 endif()
 
