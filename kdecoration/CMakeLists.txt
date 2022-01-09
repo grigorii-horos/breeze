@@ -78,12 +78,12 @@ include(ECMQtDeclareLoggingCategory)
 add_subdirectory(libdbusmenuqt)
 
 ### build library
-add_library(breezedecoration MODULE
+add_library(breezedecorationlim MODULE
     ${breezedecoration_SRCS}
     ${breezedecoration_config_SRCS}
     ${breezedecoration_config_PART_FORMS_HEADERS})
 
-target_link_libraries(breezedecoration
+target_link_libraries(breezedecorationlim
     PUBLIC
         Qt::Core
         Qt::Gui
@@ -101,12 +101,12 @@ target_link_libraries(breezedecoration
         KF5::WindowSystem)
 
 if(BREEZE_HAVE_X11)
-  target_link_libraries(breezedecoration
+  target_link_libraries(breezedecorationlim
     PUBLIC
       Qt::X11Extras
       XCB::XCB)
 endif()
 
 
-install(TARGETS breezedecoration DESTINATION ${KDE_INSTALL_PLUGINDIR}/org.kde.kdecoration2)
+install(TARGETS breezedecorationlim DESTINATION ${KDE_INSTALL_PLUGINDIR}/org.kde.kdecoration2)
 install(FILES config/breezedecorationconfig.desktop DESTINATION  ${KDE_INSTALL_KSERVICES5DIR})
