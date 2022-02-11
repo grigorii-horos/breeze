@@ -94,7 +94,7 @@ namespace Breeze
         m_internalSettings->setDrawBorderOnMaximizedWindows( m_ui.drawBorderOnMaximizedWindows->isChecked() );
         m_internalSettings->setDrawSizeGrip( m_ui.drawSizeGrip->isChecked() );
         m_internalSettings->setDrawBackgroundGradient( m_ui.drawBackgroundGradient->isChecked() );
-        m_internalSettings->setDrawTitleBarSeparator(m_ui.drawTitleBarSeparator->isChecked());
+        //m_internalSettings->setDrawTitleBarSeparator(m_ui.drawTitleBarSeparator->isChecked());
         m_internalSettings->setEnableLIM( m_ui.enableLIM->isChecked() );
 
         m_internalSettings->setShadowSize( m_ui.shadowSize->currentIndex() );
