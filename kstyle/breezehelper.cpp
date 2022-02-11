@@ -37,6 +37,8 @@ namespace Breeze
     //* contrast for arrow and treeline rendering
     static const qreal arrowShade = 0.15;
 
+    static const qreal highlightBackgroundAlpha = 0.33;
+
     static const auto radioCheckSunkenDarkeningFactor = 110;
 
     //____________________________________________________________________
@@ -330,7 +332,7 @@ namespace Breeze
 
         QPalette copy( source );
 
-        const QList<QPalette::ColorRole> roles = { QPalette::Background, QPalette::Highlight, QPalette::WindowText, QPalette::ButtonText, QPalette::Text, QPalette::Button };
+        const QList<QPalette::ColorRole> roles = { QPalette::Window, QPalette::Highlight, QPalette::WindowText, QPalette::ButtonText, QPalette::Text, QPalette::Button };
         foreach( const QPalette::ColorRole& role, roles )
         { copy.setColor( role, KColorUtils::mix( source.color( QPalette::Active, role ), source.color( QPalette::Disabled, role ), 1.0-ratio ) ); }
 
@@ -405,6 +407,62 @@ namespace Breeze
         painter->translate( 0, 2 );
         painter->drawLine( rect.bottomLeft(), rect.bottomRight() );
         painter->restore();
+    }
+
+    //______________________________________________________________________________
+    void Helper::renderFrameWithSides(
+        QPainter* painter, const QRect& rect,
+        const QColor& color, Qt::Edges edges,
+        const QColor& outline ) const
+    {
+
+        painter->save();
+
+        painter->setRenderHint( QPainter::Antialiasing );
+
+        QRectF frameRect( rect );
+
+        // set brush
+        painter->setBrush( color );
+        painter->setPen( Qt::NoPen );
+
+        // render
+        painter->drawRect( frameRect );
+
+        // set brush again
+        painter->setBrush( Qt::NoBrush );
+        painter->setPen( outline );
+
+        // manually apply the effects of StrokedRect here but only to the edges with a frame
+        if ( edges & Qt::LeftEdge ) {
+            frameRect.adjust(0.5, 0.0, 0.0, 0.0);
+        }
+        if ( edges & Qt::RightEdge ) {
+            frameRect.adjust(0.0, 0, -0.5, 0.0);
+        }
+        if ( edges & Qt::TopEdge ) {
+            frameRect.adjust(0.0, 0.5, 0.0, 0.0);
+        }
+        if ( edges & Qt::BottomEdge ) {
+            frameRect.adjust(0.0, 0.0, 0.0, -0.5);
+        }
+
+        // draw lines
+        if ( edges & Qt::LeftEdge ) {
+            painter->drawLine( QLineF(frameRect.topLeft(), frameRect.bottomLeft()) );
+        }
+        if ( edges & Qt::RightEdge ) {
+            painter->drawLine( QLineF(frameRect.topRight(), frameRect.bottomRight()) );
+        }
+        if ( edges & Qt::TopEdge ) {
+            painter->drawLine( QLineF(frameRect.topLeft(), frameRect.topRight()) );
+        }
+        if ( edges & Qt::BottomEdge ) {
+            painter->drawLine( QLineF(frameRect.bottomLeft(), frameRect.bottomRight()) );
+        }
+
+        painter->restore();
+
     }
 
     //______________________________________________________________________________
@@ -580,9 +638,9 @@ namespace Breeze
         // Colors
         if (flat) {
             if (down && enabled) {
-                bgBrush = alphaColor(highlightColor, 0.333);
+                bgBrush = alphaColor(highlightColor, highlightBackgroundAlpha);
             } else if (checked) {
-                bgBrush = hasNeutralHighlight ? alphaColor(neutralText(palette), 0.333)
+                bgBrush = hasNeutralHighlight ? alphaColor(neutralText(palette), highlightBackgroundAlpha)
                     : alphaColor(palette.buttonText().color(), 0.125);
                 penBrush = hasNeutralHighlight ? neutralText(palette)
                     : KColorUtils::mix(palette.button().color(), palette.buttonText().color(), 0.3);
@@ -626,7 +684,7 @@ namespace Breeze
         // Animations
         if (bgAnimation != AnimationData::OpacityInvalid && enabled) {
             QColor color1 = bgBrush.color();
-            QColor color2 = flat ? alphaColor(highlightColor, 0.333)
+            QColor color2 = flat ? alphaColor(highlightColor, highlightBackgroundAlpha)
                 : KColorUtils::mix(palette.button().color(), highlightColor, 0.333);
             bgBrush = KColorUtils::mix(color1, color2, bgAnimation);
         }
@@ -771,7 +829,7 @@ namespace Breeze
 
         }
 
-        
+
     }
 
     //______________________________________________________________________________
@@ -790,7 +848,7 @@ namespace Breeze
         frameRect = strokedRect(frameRect);
 
         auto transparent = neutalHighlight ? neutralText(palette) : palette.highlight().color();
-        transparent.setAlphaF(0.33);
+        transparent.setAlphaF(highlightBackgroundAlpha);
 
         QBrush penBrush;
         if (neutalHighlight) {
@@ -798,7 +856,7 @@ namespace Breeze
         } else if (state == CheckOn || state == CheckPartial) {
             penBrush = palette.highlight().color();
         } else {
-            penBrush = transparentize(palette.text().color(), 0.33);
+            penBrush = transparentize(palette.text().color(), highlightBackgroundAlpha);
         }
         painter->setPen(QPen(penBrush, PenWidth::Frame));
 
@@ -936,7 +994,7 @@ namespace Breeze
         frameRect.adjust( 0.5, 0.5, -0.5, -0.5 );
 
         auto transparent = neutalHighlight ? neutralText(palette) : palette.highlight().color();
-        transparent.setAlphaF(0.33);
+        transparent.setAlphaF(highlightBackgroundAlpha);
 
         QBrush penBrush;
         if (neutalHighlight) {
@@ -944,7 +1002,7 @@ namespace Breeze
         } else if (state == RadioOn) {
             penBrush = palette.highlight().color();
         } else {
-            penBrush = transparentize(palette.text().color(), 0.33);
+            penBrush = transparentize(palette.text().color(), highlightBackgroundAlpha);
         }
         painter->setPen(QPen(penBrush, PenWidth::Frame));
 
@@ -1003,7 +1061,7 @@ namespace Breeze
 
         QRectF markerRect;
         markerRect = frameRect.adjusted( 6, 6, -6, -6 );
-        
+
         qreal adjustFactor;
 
         // mark
@@ -1046,7 +1104,7 @@ namespace Breeze
             painter->drawRoundedRect( baseRect, radius, radius );
         }
 
-        
+
     }
 
     //______________________________________________________________________________
@@ -1073,7 +1131,7 @@ namespace Breeze
 
             const QPen bgPen( fg, penWidth, Qt::SolidLine, Qt::RoundCap );
             const QPen fgPen( KColorUtils::overlayColors( bg, alphaColor( fg, 0.5) ), penWidth - 2, Qt::SolidLine, Qt::RoundCap );
-            
+
             // setup pen
             if( angleSpan != 0 )
             {
@@ -1149,7 +1207,7 @@ namespace Breeze
             painter->drawRoundedRect( baseRect, radius, radius );
         }
 
-        
+
     }
 
 
@@ -1225,7 +1283,7 @@ namespace Breeze
         painter->setBrush( KColorUtils::overlayColors(bg, alphaColor(fg, 0.5)) );
         painter->drawRoundedRect( strokedRect(baseRect), radius, radius );
 
-        
+
     }
 
     void Helper::renderScrollBarGroove(
@@ -1250,7 +1308,7 @@ namespace Breeze
             painter->drawRoundedRect( strokedRect(baseRect), radius, radius );
         }
 
-        
+
     }
 
 
@@ -1495,7 +1553,7 @@ namespace Breeze
     void Helper::renderEllipseShadow( QPainter* painter, const QRectF& rect, const QColor& color ) const
     {
         if( !color.isValid() ) return;
-        
+
         painter->save();
 
         // Clipping does not improve performance here
@@ -1503,22 +1561,22 @@ namespace Breeze
         qreal adjustment = 0.5 * PenWidth::Shadow; // Adjust for the pen
 
         qreal radius = rect.width() / 2 - adjustment;
-        
+
         /* The right side is offset by +0.5 for the visible part of the shadow.
          * The other sides are offset by +0.5 or -0.5 because of the pen.
          */
         QRectF shadowRect = rect.adjusted( adjustment, adjustment, adjustment, -adjustment );
-        
+
         painter->translate( rect.center() );
         painter->rotate( 45 );
         painter->translate( -rect.center() );
         painter->setPen( color );
         painter->setBrush( Qt::NoBrush );
         painter->drawRoundedRect( shadowRect, radius, radius );
-        
+
         painter->restore();
     }
-    
+
     //______________________________________________________________________________
     bool Helper::isX11()
     {
@@ -1631,10 +1689,6 @@ namespace Breeze
     { return compositingActive() && widget && widget->testAttribute( Qt::WA_TranslucentBackground ); }
 
     //______________________________________________________________________________________
-    qreal Helper::devicePixelRatio( const QPixmap& pixmap ) const
-    {
-        return pixmap.devicePixelRatio();
-    }
 
     QPixmap Helper::coloredIcon(const QIcon& icon,  const QPalette& palette, const QSize &size, QIcon::Mode mode, QIcon::State state)
     {

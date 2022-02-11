@@ -50,11 +50,11 @@ namespace Breeze
 
         // menu items
         static constexpr int Menu_FrameWidth = 0;
-        static constexpr int MenuItem_MarginWidth = 8;
+        static constexpr int MenuItem_MarginWidth = 5;
         static constexpr int MenuItem_ExtraLeftMargin = 4;
-        static constexpr int MenuItem_MarginHeight = 4;
+        static constexpr int MenuItem_MarginHeight = 3;
         static constexpr int MenuItem_ItemSpacing = 4;
-        static constexpr int MenuItem_SeparatorPadding = 0;
+        static constexpr int MenuItem_SeparatorPadding = 3;
         static constexpr int MenuItem_AcceleratorSpace = 16;
         static constexpr int MenuButton_IndicatorWidth = 20;
 
@@ -90,7 +90,7 @@ namespace Breeze
 
         // scrollbars
         static constexpr int ScrollBar_Extend = 21;
-        static constexpr int ScrollBar_SliderWidth = 10;
+        static constexpr int ScrollBar_SliderWidth = 8;
         static constexpr int ScrollBar_MinSliderHeight = 20;
         static constexpr int ScrollBar_NoButtonHeight = (ScrollBar_Extend-ScrollBar_SliderWidth)/2;
         static constexpr int ScrollBar_SingleButtonHeight = ScrollBar_Extend;

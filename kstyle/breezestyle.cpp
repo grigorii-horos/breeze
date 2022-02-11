@@ -1456,8 +1456,6 @@ namespace Breeze
             // state
             const State& state( option.state );
             const bool enabled( state & State_Enabled );
-            bool mouseOver( enabled && ( state & State_MouseOver ) );
-            bool hasFocus( enabled && ( state & State_HasFocus ) );
 
             // icon
             if( !button->icon().isNull() )
@@ -1476,7 +1474,7 @@ namespace Breeze
 
             // text rect
             QRect textRect( offset, QSize( button->size().width() - offset.x() - margin, button->size().height() - 2*margin ) );
-            const QPalette::ColorRole textRole = (enabled && hasFocus && !mouseOver && !isFlat ) ? QPalette::HighlightedText : QPalette::ButtonText;
+            const QPalette::ColorRole textRole = QPalette::ButtonText;
             if( !button->text().isEmpty() )
             {
 
@@ -1778,6 +1776,29 @@ namespace Breeze
     //___________________________________________________________________________________________________________________
     QRect Style::frameContentsRect( const QStyleOption* option, const QWidget* widget ) const
     {
+        if ( widget ) {
+            const auto borders = widget->property( PropertyNames::bordersSides );
+            if ( borders.isValid() && borders.canConvert<Qt::Edges>() ) {
+                const auto value = borders.value<Qt::Edges>();
+                auto rect = option->rect;
+
+                if ( value & Qt::LeftEdge ) {
+                    rect.adjust( 1, 0, 0, 0 );
+                }
+                if ( value & Qt::RightEdge ) {
+                    rect.adjust( 0, 0, -1, 0 );
+                }
+                if ( value & Qt::TopEdge ) {
+                    rect.adjust( 0, 1, 0, 0 );
+                }
+                if ( value & Qt::BottomEdge ) {
+                    rect.adjust( 0, 0, 0, -1 );
+                }
+
+                return rect;
+            }
+        }
+
         if( !StyleConfigData::sidePanelDrawFrame() &&
             qobject_cast<const QAbstractScrollArea*>( widget ) &&
             widget->property( PropertyNames::sidePanelView ).toBool() )
@@ -1989,27 +2010,31 @@ namespace Breeze
 
         }
 
-        // vertical positioning
+        // expand the tab bar towards the frame to cover the frame's border
         switch( tabOption->shape )
         {
             case QTabBar::RoundedNorth:
             case QTabBar::TriangularNorth:
-            tabBarRect.moveTop( rect.top()+1 );
+            tabBarRect.moveTop( rect.top() );
+            tabBarRect.setBottom( tabBarRect.bottom() + 1 );
             break;
 
             case QTabBar::RoundedSouth:
             case QTabBar::TriangularSouth:
-            tabBarRect.moveBottom( rect.bottom()-1 );
+            tabBarRect.moveBottom( rect.bottom() );
+            tabBarRect.setTop( tabBarRect.top() - 1 );
             break;
 
             case QTabBar::RoundedWest:
             case QTabBar::TriangularWest:
-            tabBarRect.moveLeft( rect.left()+1 );
+            tabBarRect.moveLeft( rect.left() );
+            tabBarRect.setRight( tabBarRect.right() + 1 );
             break;
 
             case QTabBar::RoundedEast:
             case QTabBar::TriangularEast:
-            tabBarRect.moveRight( rect.right()-1 );
+            tabBarRect.moveRight( rect.right() );
+            tabBarRect.setLeft( tabBarRect.left() - 1 );
             break;
 
             default: break;
@@ -3162,7 +3187,7 @@ namespace Breeze
         }
 
         // contents height
-        int contentsHeight( headerOption->fontMetrics.height() );
+        int contentsHeight( hasText ? textSize.height() : headerOption->fontMetrics.height() );
         if( hasIcon ) contentsHeight = qMax( contentsHeight, iconSize.height() );
 
         if( horizontal && headerOption->sortIndicator != QStyleOptionHeader::None )
@@ -3212,6 +3237,16 @@ namespace Breeze
         // retrieve animation mode and opacity
         const AnimationMode mode( _animations->inputWidgetEngine().frameAnimationMode( widget ) );
         const qreal opacity( _animations->inputWidgetEngine().frameOpacity( widget ) );
+
+        if ( widget && widget->property( PropertyNames::bordersSides ).isValid() )
+        {
+
+            const auto background( palette.base().color() );
+            const auto outline( _helper->frameOutlineColor( palette, mouseOver, hasFocus, opacity, mode ) );
+            _helper->renderFrameWithSides( painter, rect, background, widget->property( PropertyNames::bordersSides ).value<Qt::Edges>(), outline );
+
+            return true;
+        }
 
         // render
         if( !StyleConfigData::sidePanelDrawFrame() && widget && widget->property( PropertyNames::sidePanelView ).toBool() )
@@ -6017,6 +6052,24 @@ namespace Breeze
 
             default: break;
         }
+        switch (tabOption->shape) {
+        case QTabBar::RoundedNorth:
+        case QTabBar::TriangularNorth:
+            rect.adjust( 0, 0, 0, 1 );
+            break;
+        case QTabBar::RoundedSouth:
+        case QTabBar::TriangularSouth:
+            rect.adjust( 0, 0, 0, -1 );
+            break;
+        case QTabBar::RoundedWest:
+        case QTabBar::TriangularWest:
+            rect.adjust( 0, 0, 1, 0 );
+            break;
+        case QTabBar::RoundedEast:
+        case QTabBar::TriangularEast:
+            rect.adjust( 0, 0, -1, 0 );
+            break;
+        }
 
         QHash<QByteArray, bool> stateProperties;
         stateProperties["enabled"] = enabled;
@@ -6390,12 +6443,6 @@ namespace Breeze
                 // adjust state to have correct icon rendered
                 const auto button( qobject_cast<const QAbstractButton*>( widget ) );
                 if( button->isChecked() || button->isDown() ) copy.state |= State_On;
-
-            } else if( !inTabBar && hasInlineIndicator ) {
-
-                const int marginWidth( flat ? Metrics::ToolButton_MarginWidth : Metrics::Button_MarginWidth + Metrics::Frame_FrameWidth );
-                contentsRect = insideMargin( contentsRect, marginWidth, 0 );
-                contentsRect = visualRect( option, contentsRect );
 
             }
 

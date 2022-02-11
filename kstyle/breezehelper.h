@@ -158,6 +158,9 @@ namespace Breeze
         //* generic frame
         void renderFrame( QPainter*, const QRect&, const QColor& color, const QColor& outline = QColor() ) const;
 
+        //* generic frame, with separators only on the side
+        void renderFrameWithSides( QPainter*, const QRect&, const QColor& color, Qt::Edges edges, const QColor& outline = QColor() ) const;
+
         //* side panel frame
         void renderSidePanelFrame( QPainter*, const QRect&, const QColor& outline, Side ) const;
 
@@ -254,9 +257,6 @@ namespace Breeze
         bool shouldDrawToolsArea ( const QWidget* ) const;
 
         //@}
-
-        //* return device pixel ratio for a given pixmap
-        virtual qreal devicePixelRatio( const QPixmap& ) const;
 
         //* frame radius
         constexpr qreal frameRadius( const int penWidth = PenWidth::NoPen, const qreal bias = 0 ) const
