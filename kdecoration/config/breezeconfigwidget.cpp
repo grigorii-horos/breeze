@@ -61,7 +61,7 @@ namespace Breeze
         m_ui.outlineCloseButton->setChecked( m_internalSettings->outlineCloseButton() );
         m_ui.drawSizeGrip->setChecked( m_internalSettings->drawSizeGrip() );
         m_ui.drawBackgroundGradient->setChecked( m_internalSettings->drawBackgroundGradient() );
-        m_ui.drawTitleBarSeparator->setChecked( m_internalSettings->drawTitleBarSeparator() );
+        //m_ui.drawTitleBarSeparator->setChecked( m_internalSettings->drawTitleBarSeparator() );
         m_ui.enableLIM -> setChecked( m_internalSettings->enableLIM() );
 
         // load shadows
@@ -141,7 +141,7 @@ namespace Breeze
         m_ui.drawBorderOnMaximizedWindows->setChecked( m_internalSettings->drawBorderOnMaximizedWindows() );
         m_ui.drawSizeGrip->setChecked( m_internalSettings->drawSizeGrip() );
         m_ui.drawBackgroundGradient->setChecked( m_internalSettings->drawBackgroundGradient() );
-        m_ui.drawTitleBarSeparator->setChecked( m_internalSettings->drawTitleBarSeparator() );
+        //m_ui.drawTitleBarSeparator->setChecked( m_internalSettings->drawTitleBarSeparator() );
         m_ui.enableLIM->setChecked( m_internalSettings->enableLIM() );
 
         m_ui.shadowSize->setCurrentIndex( m_internalSettings->shadowSize() );
